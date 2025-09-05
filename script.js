@@ -1,6 +1,5 @@
-let speed_multiplier = 5
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 800;
+let speed_multiplier = 5;
+const CANVAS_WIDTH = CANVAS_HEIGHT = 800;
 class Velocity{
   constructor(x,y){
     this.x = x;
@@ -23,9 +22,9 @@ function combineGenome(p1,p2){
 }
 function randomGenome(){
   return new Genome(
-    new Gene(Math.random()*5),
-    new Gene(Math.random()*5),
-    new Gene(Math.random()*5),
+    new Gene(Math.max(0.5,Math.random()*2)),
+    new Gene(Math.max(0.5,Math.random()*2)),
+    new Gene(Math.max(0.5,Math.random()*2)),
   );
 }
 
@@ -61,10 +60,12 @@ class Organism{
       if(individual == this){
         return
       }
-      if(this.mating_cooldown){
+      if(this.mating_cooldown || individual.mating_cooldown){
         return
       }
-
+      if(this.saturation < 90 || individual.saturation < 90){
+        return;
+      }
       if(Math.abs(this.x - individual.x) < this.d && Math.abs(this.y - individual.y) < this.d){
         this.mate(individual,1000);
       }
@@ -88,7 +89,7 @@ class Organism{
 }
 class Tiger extends Organism{
   constructor(initial_mating_cooldown,x,y,v,genome){
-    super(x,y,v,50,genome);
+    super(x,y,v,50*genome.sizeGene.value,genome);
     this.saturation = 30;
     this.mating_cooldown = initial_mating_cooldown;
     this.mating_cooldown_length = 10000;
@@ -103,7 +104,9 @@ class Tiger extends Organism{
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
+    if(tigers.length < 4){
     tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
+    }
   }
   draw(){
     fill(20, 0, 250);
@@ -120,7 +123,8 @@ class Tiger extends Organism{
 
 class Bird extends Organism{
   constructor(initial_mating_cooldown,x,y,v,genome){
-    super(x,y,v,10,genome)
+    super(x,y,v,10*genome.sizeGene.value,genome)
+    this.saturation = 100;
     this.mating_cooldown = initial_mating_cooldown;
     this.mating_cooldown_length = 5000;
     setTimeout(()=> {
@@ -138,7 +142,9 @@ class Bird extends Organism{
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
-    birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random()),genome))
+    for(let i = 0; i < 5; i++){
+        birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random()),genome))
+    }    
   }
 }
 const birds = spawnBirds();
@@ -168,7 +174,7 @@ function spawnBirds(){
   let birds = []
   for(let x = 10; x< CANVAS_WIDTH-10; x++){
     for(let y = 10; y < CANVAS_HEIGHT-10; y++){
-      if(Math.random() < 0.0003){
+      if(Math.random() < 0.0008){
         birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
@@ -179,7 +185,7 @@ function spawnTiger(){
   let tigers = []
   for(let x = 50; x < CANVAS_WIDTH-50; x++){
     for(let y = 50; y < CANVAS_HEIGHT-50; y++){
-      if(Math.random() < 0.000005){
+      if(Math.random() < 0.000004){
         tigers.push(new Tiger(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
