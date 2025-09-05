@@ -1,5 +1,6 @@
-let speed_multiplier = 10
-const CANVAS_WIDTH = CANVAS_HEIGHT = 800;
+let speed_multiplier = 5
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 800;
 class Velocity{
   constructor(x,y){
     this.x = x;
@@ -15,9 +16,9 @@ class Genome{
 }
 function combineGenome(p1,p2){
   return new Genome(
-    Math.sqrt(p1.genome.speedGene.value*p2.genome.speedGene.value),
-    Math.sqrt(p1.genome.sizeGene.value*p2.genome.sizeGene.value),
-    Math.sqrt(p1.genome.stealthGene.value*p2.genome.stealthGene.value)
+    new Gene(Math.sqrt(p1.genome.speedGene.value*p2.genome.speedGene.value)),
+    new Gene(Math.sqrt(p1.genome.sizeGene.value*p2.genome.sizeGene.value)),
+    new Gene(Math.sqrt(p1.genome.stealthGene.value*p2.genome.stealthGene.value))
   );
 }
 function randomGenome(){
@@ -65,7 +66,7 @@ class Organism{
       }
 
       if(Math.abs(this.x - individual.x) < this.d && Math.abs(this.y - individual.y) < this.d){
-        this.mate(individual,this.mating_cooldown_length);
+        this.mate(individual,1000);
       }
     }
   }
@@ -80,7 +81,7 @@ class Organism{
   }
   move(){
     this.x = this.x+this.v.x*speed_multiplier*this.genome.speedGene.value;
-    this.y = this.y+this.v.y*speed_multiplier*this.genome.speedGene.value;       
+    this.y = this.y+this.v.y*speed_multiplier*this.genome.speedGene.value;
     this.v.x = oob(this.x,this.v.x,this.d)
     this.v.y = oob(this.y,this.v.y,this.d)
   }
@@ -142,12 +143,14 @@ class Bird extends Organism{
 }
 const birds = spawnBirds();
 const tigers = spawnTiger();
+
 function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   background(200);
 }
 
 function draw() {
+  console.log(birds)
   background(200);
   for(const bird of birds){
     bird.collisions(birds,[])
@@ -190,7 +193,7 @@ function speedUp(){
 function slowDown(){
   speed_multiplier/=1.5;
 }
- window.onload = function () {
+window.onload = function () {
 
 var bird_dps = []; 
 var bird_chart = new CanvasJS.Chart("birdContainer", {
