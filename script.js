@@ -1,4 +1,4 @@
-const speed_multiplier = 3
+let speed_multiplier = 10
 const CANVAS_WIDTH = CANVAS_HEIGHT = 800;
 class Velocity{
   constructor(x,y){
@@ -15,54 +15,65 @@ function oob(position, velocity,diameter){
   }
   return velocity;
 }
-
-class Tiger{
-  constructor(initial_mating_cooldown,x,y,v){
-    this.d = 50;
+class Organism{
+  constructor(x,y,v,d){
     this.x = x;
     this.y = y;
     this.v = v;
-    this.saturation = 30;
-    this.mating_cooldown = initial_mating_cooldown;
-    setTimeout(()=> {
-          this.mating_cooldown = false;
-        },5000);
-    setInterval(()=>this.saturation-=10,1000);
-    }
-  collisions(){
-    for(const bird of birds){
-      if(Math.sqrt(Math.pow(this.x-bird.x,2) + Math.pow(this.y-bird.y,2)) < this.d/2 + bird.d/2){
-        birds.splice(birds.indexOf(bird),1)
-        this.saturation = Math.min(this.saturation+10,100);
+    this.d = d;
+  }
+  collisions(species,prey){
+    for(const p of prey){
+      if(Math.sqrt(Math.pow(this.x-p.x,2) + Math.pow(this.y-p.y,2)) < this.d/2 + p.d/2){
+        this.consume(p);
       }
     }
-    for(const tiger of tigers){
-      if(tiger == this){
+    for(const individual of species){
+      if(individual == this){
         return
       }
       if(this.mating_cooldown){
         return
       }
 
-      if(Math.abs(this.x - tiger.x) < this.d && Math.abs(this.y - tiger.y) < this.d){
-        this.mate(tiger);
+      if(Math.abs(this.x - individual.x) < this.d && Math.abs(this.y - individual.y) < this.d){
+        this.mate(individual,this.mating_cooldown_length);
       }
     }
   }
-  mate(tiger){
+  mate(ind,cooldown){
     this.mating_cooldown = true;
-    tiger.mating_cooldown = true
+    ind.mating_cooldown = true
     setTimeout(()=> {
       this.mating_cooldown = false;
-      tiger.mating_cooldown = false;
-    },10000);
-    tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random()*speed_multiplier,Math.random()*speed_multiplier)))
+      ind.mating_cooldown = false;
+    },cooldown);
+    this.spawn()
   }
   move(){
-    this.x = this.x+this.v.x;
-    this.y = this.y+this.v.y;       
+    this.x = this.x+this.v.x*speed_multiplier;
+    this.y = this.y+this.v.y*speed_multiplier;       
     this.v.x = oob(this.x,this.v.x,this.d)
     this.v.y = oob(this.y,this.v.y,this.d)
+  }
+}
+class Tiger extends Organism{
+  constructor(initial_mating_cooldown,x,y,v){
+    super(x,y,v,50);
+    this.saturation = 30;
+    this.mating_cooldown = initial_mating_cooldown;
+    this.mating_cooldown_length = 10000;
+    setTimeout(()=> {
+          this.mating_cooldown = false;
+        },5000);
+    setInterval(()=>this.saturation-=10,1000);
+  }
+  consume(prey){
+    birds.splice(birds.indexOf(prey),1)
+    this.saturation = Math.min(this.saturation+10,100);
+  }
+  spawn(){
+    tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random())))
   }
   draw(){
     fill(20, 0, 250);
@@ -77,49 +88,26 @@ class Tiger{
   }
 }
 
-class Bird{
+class Bird extends Organism{
   constructor(initial_mating_cooldown,x,y,v){
-    this.d = 10;
-    this.x = x;
-    this.y = y;
-    this.v = v;
+    super(x,y,v,10)
     this.mating_cooldown = initial_mating_cooldown;
+    this.mating_cooldown_length = 5000;
     setTimeout(()=> {
       this.mating_cooldown = false;
     },5000);
   }
-  move(){
-    this.x = this.x+this.v.x;
-    this.y = this.y+this.v.y;       
-    this.v.x = oob(this.x,this.v.x,this.d)
-    this.v.y = oob(this.y,this.v.y,this.d)
-  }
+
   draw(){
     fill(20, 150, 30);
     circle(this.x,this.y,this.d);
     noFill();
   }
-  collisions(){
-    for(const bird of birds){
-      if(bird == this){
-        return
-      }
-      if(this.mating_cooldown){
-        return
-      }
-      if(Math.sqrt(Math.pow(this.x-bird.x,2) + Math.pow(this.y-bird.y,2)) < this.d/2 + bird.d/2){
-        this.mate(bird);
-      }
-    }
+  collide(){
+
   }
-  mate(bird){
-    this.mating_cooldown = true;
-    bird.mating_cooldown = true
-    setTimeout(()=> {
-      this.mating_cooldown = false;
-      bird.mating_cooldown = false;
-    },5000);
-    birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random()*speed_multiplier,Math.random()*speed_multiplier)))
+  spawn(){
+    birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random())))
   }
 }
 const birds = spawnBirds();
@@ -132,22 +120,39 @@ function setup() {
 function draw() {
   background(200);
   for(const bird of birds){
-    bird.collisions()
+    bird.collisions(birds,[])
     bird.move();
     bird.draw();
   }
   for(const tiger of tigers){
-    tiger.collisions()
+    tiger.collisions(tigers,birds)
     tiger.move();
     tiger.draw();
   }
+  drawGraph()
 }
+function drawGraph(){
+  window.onload = function () {
+
+    var dps = []; // dataPoints
+    var chart = new CanvasJS.Chart("chartContainer", {
+      title :{
+        text: "Dynamic Data"
+      },
+      data: [{
+        type: "line",
+        dataPoints: dps
+      }]
+    });
+  }
+}
+
 function spawnBirds(){
   let birds = []
   for(let x = 10; x< CANVAS_WIDTH-10; x++){
     for(let y = 10; y < CANVAS_HEIGHT-10; y++){
       if(Math.random() < 0.0003){
-        birds.push(new Bird(false,x,y,new Velocity(Math.random()*speed_multiplier,Math.random()*speed_multiplier)))
+        birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random())))
       }
     }
   }
@@ -158,9 +163,93 @@ function spawnTiger(){
   for(let x = 50; x < CANVAS_WIDTH-50; x++){
     for(let y = 50; y < CANVAS_HEIGHT-50; y++){
       if(Math.random() < 0.000005){
-        tigers.push(new Tiger(false,x,y,new Velocity(Math.random()*speed_multiplier,Math.random()*speed_multiplier)))
+        tigers.push(new Tiger(false,x,y,new Velocity(Math.random(),Math.random())))
       }
     }
   }
   return tigers;
+}
+function speedUp(){
+  speed_multiplier*=1.5;
+}
+function slowDown(){
+  speed_multiplier/=1.5;
+}
+
+window.onload = function () {
+
+var dps = []; 
+var chart = new CanvasJS.Chart("chartContainer", {
+	title :{
+		text: "Bird Population"
+	},
+	data: [{
+		type: "line",
+		dataPoints: dps
+	}],
+});
+
+var xVal = 0;
+var updateInterval = 200;
+var dataLength = 100; 
+
+var updateChart = function (count) {
+
+	count = count || 1;
+
+	for (var j = 0; j < count; j++) {
+		
+		dps.push({
+			x: xVal,
+			y: birds.length
+		});
+		xVal++;
+	}
+
+	if (dps.length > dataLength) {
+		dps.shift();
+	}
+
+	chart.render();
+};
+
+updateChart(dataLength);
+setInterval(function(){updateChart()}, updateInterval);
+
+var dps = []; 
+var chart = new CanvasJS.Chart("tigerContainer", {
+	title :{
+		text: "Tiger Population"
+	},
+	data: [{
+		type: "line",
+		dataPoints: dps
+	}],
+});
+var tig = []
+var xVal = 0;
+var updateInterval = 200;
+var dataLength = 100; 
+
+var updateTiger = function (count) {
+
+	count = count || 1;
+
+	for (var j = 0; j < count; j++) {
+		
+		tig.push({
+			x: xVal,
+			y: tigers.length
+		});
+		xVal++;
+	}
+
+	if (tig.length > dataLength) {
+		tig.shift();
+	}
+
+	chart.render();
+};
+updateChart(dataLength);
+setInterval(function(){updateTiger()}, updateInterval);
 }

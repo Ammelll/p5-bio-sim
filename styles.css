@@ -1,3 +1,5 @@
 body {
-    background-color: yellow;
+    background-color: indigo;
+    display:flex;
+    justify-content:center;
 }
