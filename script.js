@@ -6,6 +6,33 @@ class Velocity{
     this.y = y;
   }
 }
+class Genome{
+  constructor(speedGene,sizeGene,stealthGene){
+    this.speedGene = speedGene;
+    this.sizeGene = sizeGene;
+    this.stealthGene = stealthGene;
+  }
+}
+function combineGenome(p1,p2){
+  return new Genome(
+    Math.sqrt(p1.genome.speedGene.value*p2.genome.speedGene.value),
+    Math.sqrt(p1.genome.sizeGene.value*p2.genome.sizeGene.value),
+    Math.sqrt(p1.genome.stealthGene.value*p2.genome.stealthGene.value)
+  );
+}
+function randomGenome(){
+  return new Genome(
+    new Gene(Math.random()*5),
+    new Gene(Math.random()*5),
+    new Gene(Math.random()*5),
+  );
+}
+
+class Gene{
+  constructor(value){
+    this.value = value;
+  }
+}
 function randomCoordinate(boundary){
   return Math.max(boundary,Math.random()*CANVAS_HEIGHT-boundary)
 }
@@ -16,11 +43,12 @@ function oob(position, velocity,diameter){
   return velocity;
 }
 class Organism{
-  constructor(x,y,v,d){
+  constructor(x,y,v,d,genome){
     this.x = x;
     this.y = y;
     this.v = v;
     this.d = d;
+    this.genome = genome;
   }
   collisions(species,prey){
     for(const p of prey){
@@ -48,18 +76,18 @@ class Organism{
       this.mating_cooldown = false;
       ind.mating_cooldown = false;
     },cooldown);
-    this.spawn()
+    this.spawn(this,ind)
   }
   move(){
-    this.x = this.x+this.v.x*speed_multiplier;
-    this.y = this.y+this.v.y*speed_multiplier;       
+    this.x = this.x+this.v.x*speed_multiplier*this.genome.speedGene.value;
+    this.y = this.y+this.v.y*speed_multiplier*this.genome.speedGene.value;       
     this.v.x = oob(this.x,this.v.x,this.d)
     this.v.y = oob(this.y,this.v.y,this.d)
   }
 }
 class Tiger extends Organism{
-  constructor(initial_mating_cooldown,x,y,v){
-    super(x,y,v,50);
+  constructor(initial_mating_cooldown,x,y,v,genome){
+    super(x,y,v,50,genome);
     this.saturation = 30;
     this.mating_cooldown = initial_mating_cooldown;
     this.mating_cooldown_length = 10000;
@@ -72,8 +100,9 @@ class Tiger extends Organism{
     birds.splice(birds.indexOf(prey),1)
     this.saturation = Math.min(this.saturation+10,100);
   }
-  spawn(){
-    tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random())))
+  spawn(p1,p2){
+    let genome = combineGenome(p1,p2);
+    tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
   }
   draw(){
     fill(20, 0, 250);
@@ -89,8 +118,8 @@ class Tiger extends Organism{
 }
 
 class Bird extends Organism{
-  constructor(initial_mating_cooldown,x,y,v){
-    super(x,y,v,10)
+  constructor(initial_mating_cooldown,x,y,v,genome){
+    super(x,y,v,10,genome)
     this.mating_cooldown = initial_mating_cooldown;
     this.mating_cooldown_length = 5000;
     setTimeout(()=> {
@@ -106,8 +135,9 @@ class Bird extends Organism{
   collide(){
 
   }
-  spawn(){
-    birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random())))
+  spawn(p1,p2){
+    let genome = combineGenome(p1,p2);
+    birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random()),genome))
   }
 }
 const birds = spawnBirds();
@@ -129,22 +159,6 @@ function draw() {
     tiger.move();
     tiger.draw();
   }
-  drawGraph()
-}
-function drawGraph(){
-  window.onload = function () {
-
-    var dps = []; // dataPoints
-    var chart = new CanvasJS.Chart("chartContainer", {
-      title :{
-        text: "Dynamic Data"
-      },
-      data: [{
-        type: "line",
-        dataPoints: dps
-      }]
-    });
-  }
 }
 
 function spawnBirds(){
@@ -152,7 +166,7 @@ function spawnBirds(){
   for(let x = 10; x< CANVAS_WIDTH-10; x++){
     for(let y = 10; y < CANVAS_HEIGHT-10; y++){
       if(Math.random() < 0.0003){
-        birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random())))
+        birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
   }
@@ -163,93 +177,92 @@ function spawnTiger(){
   for(let x = 50; x < CANVAS_WIDTH-50; x++){
     for(let y = 50; y < CANVAS_HEIGHT-50; y++){
       if(Math.random() < 0.000005){
-        tigers.push(new Tiger(false,x,y,new Velocity(Math.random(),Math.random())))
+        tigers.push(new Tiger(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
   }
   return tigers;
 }
+
 function speedUp(){
   speed_multiplier*=1.5;
 }
 function slowDown(){
   speed_multiplier/=1.5;
 }
+ window.onload = function () {
 
-window.onload = function () {
-
-var dps = []; 
-var chart = new CanvasJS.Chart("chartContainer", {
+var bird_dps = []; 
+var bird_chart = new CanvasJS.Chart("birdContainer", {
 	title :{
 		text: "Bird Population"
 	},
 	data: [{
 		type: "line",
-		dataPoints: dps
+		dataPoints: bird_dps
 	}],
 });
 
-var xVal = 0;
-var updateInterval = 200;
+var xValBird = 0;
+var updateInterval = 250;
 var dataLength = 100; 
 
-var updateChart = function (count) {
+var updateBirdChart = function (count) {
 
 	count = count || 1;
 
 	for (var j = 0; j < count; j++) {
 		
-		dps.push({
-			x: xVal,
+		bird_dps.push({
+			x: xValBird,
 			y: birds.length
 		});
-		xVal++;
+		xValBird++;
 	}
 
-	if (dps.length > dataLength) {
-		dps.shift();
+	if (bird_dps.length > dataLength) {
+		bird_dps.shift();
 	}
 
-	chart.render();
+	bird_chart.render();
 };
 
-updateChart(dataLength);
-setInterval(function(){updateChart()}, updateInterval);
+updateBirdChart(dataLength);
+setInterval(function(){updateBirdChart()}, updateInterval);
 
-var dps = []; 
-var chart = new CanvasJS.Chart("tigerContainer", {
+var tiger_dps = []; 
+var tiger_chart = new CanvasJS.Chart("tigerContainer", {
 	title :{
 		text: "Tiger Population"
 	},
 	data: [{
 		type: "line",
-		dataPoints: dps
+		dataPoints: tiger_dps
 	}],
 });
-var tig = []
-var xVal = 0;
-var updateInterval = 200;
-var dataLength = 100; 
+var xValTiger = 0;
 
-var updateTiger = function (count) {
+var updateTigerChart = function (count) {
 
 	count = count || 1;
 
 	for (var j = 0; j < count; j++) {
 		
-		tig.push({
-			x: xVal,
+		tiger_dps.push({
+			x: xValTiger,
 			y: tigers.length
 		});
-		xVal++;
+		xValTiger++;
 	}
 
-	if (tig.length > dataLength) {
-		tig.shift();
+	if (tiger_dps.length > dataLength) {
+		tiger_dps.shift();
 	}
 
-	chart.render();
+	tiger_chart.render();
 };
-updateChart(dataLength);
-setInterval(function(){updateTiger()}, updateInterval);
+updateTigerChart(dataLength);
+setInterval(function(){updateTigerChart()}, updateInterval);
 }
+
+
