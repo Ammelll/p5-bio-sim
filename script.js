@@ -7,11 +7,14 @@ class Velocity{
   }
 }
 class Genome{
-  constructor(speedGene,sizeGene,stealthGene, litterGene){
+  constructor(speedGene,sizeGene,stealthGene, litterGene, eyeSightGene,saturationGene, hungerGene){
     this.speedGene = speedGene;
     this.sizeGene = sizeGene;
     this.stealthGene = stealthGene;
     this.litterGene = litterGene;
+    this.eyeSightGene = eyeSightGene;
+    this.saturationGene = saturationGene;
+    this.hungerGene = hungerGene
   }
 }
 function combineGenome(p1,p2){
@@ -20,6 +23,9 @@ function combineGenome(p1,p2){
     new Gene(Math.sqrt(p1.genome.sizeGene.value*p2.genome.sizeGene.value)),
     new Gene(Math.sqrt(p1.genome.stealthGene.value*p2.genome.stealthGene.value)),
     new Gene(Math.sqrt(p1.genome.litterGene.value*p2.genome.litterGene.value)),
+    new Gene(Math.sqrt(p1.genome.eyeSightGene.value*p2.genome.eyeSightGene.value)),
+    new Gene(Math.sqrt(p1.genome.saturationGene.value*p2.genome.saturationGene.value)),
+    new Gene(Math.sqrt(p1.genome.hungerGene.value*p2.genome.hungerGene.value)),
 
   );
 }
@@ -29,6 +35,9 @@ function randomGenome(){
     new Gene(Math.max(0.25,Math.random()*2)),
     new Gene(Math.max(0.5,Math.random()*2)),
     new Gene(Math.max(1,Math.random()*10)),
+    new Gene(Math.max(1,Math.random()*3)),
+    new Gene(Math.max(5,Math.random()*20)),
+    new Gene(Math.max(5,Math.random()*20)),
   );
 }
 
@@ -56,7 +65,7 @@ class Organism{
   }
   collisions(species,prey){
     for(const p of prey){
-      if(p.genome.stealthGene.value > Math.max(0.5,Math.random()*2)){
+      if(p.genome.stealthGene.value > this.genome.eyeSightGene.value){
         continue;
       }
       if(Math.sqrt(Math.pow(this.x-p.x,2) + Math.pow(this.y-p.y,2)) < this.d/2 + p.d/2){
@@ -70,7 +79,7 @@ class Organism{
       if(this.mating_cooldown || individual.mating_cooldown){
         return
       }
-      if(this.saturation < 90 || individual.saturation < 90){
+      if(this.saturation < 60 || individual.saturation < 60){
         return;
       }
       if(Math.abs(this.x - individual.x) < this.d && Math.abs(this.y - individual.y) < this.d){
@@ -103,11 +112,11 @@ class Tiger extends Organism{
     setTimeout(()=> {
           this.mating_cooldown = false;
         },5000);
-    setInterval(()=>this.saturation-=10,1000);
+    setInterval(()=>this.saturation-=this.genome.hungerGene.value,1000);
   }
   consume(prey){
     birds.splice(birds.indexOf(prey),1)
-    this.saturation = Math.min(this.saturation+10,100);
+    this.saturation = Math.min(this.saturation+this.genome.saturationGene.value,100);
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
@@ -117,8 +126,9 @@ class Tiger extends Organism{
     fill(20, 0, 250);
     circle(this.x,this.y,this.d);
     noFill();
-    stroke(0,0,0)
-    text(this.saturation.toString(),this.x,this.y,)
+    stroke(0,0,0);
+    textSize(20)
+    text(this.saturation.toPrecision(3).toString(),this.x,this.y,)
     if(this.saturation < 0) this.starve();
   }
   starve(){
@@ -189,7 +199,7 @@ function spawnTiger(){
   let tigers = []
   for(let x = 50; x < CANVAS_WIDTH-50; x++){
     for(let y = 50; y < CANVAS_HEIGHT-50; y++){
-      if(Math.random() < 0.000004){
+      if(Math.random() < 0.000008){
         tigers.push(new Tiger(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
@@ -208,16 +218,28 @@ function displayGenes(){
   let size = 0;
   let stealth = 0;
   let litter = 0;
+  let eyesight = 0
+  let sat = 0;
+  let hunger = 0;
   for(const bird of birds){
     speed+=bird.genome.speedGene.value;
     size+=bird.genome.sizeGene.value;
     stealth+=bird.genome.stealthGene.value;
     litter+=bird.genome.litterGene.value;
   }
+  for(const tiger of tigers){
+    eyesight+=tiger.genome.eyeSightGene.value;
+    sat+=tiger.genome.saturationGene.value;
+    hunger+=tiger.genome.hungerGene.value;
+  }
   console.log("Speed: "+ speed/birds.length);
   console.log("Size: "+ size/birds.length);
   console.log("Stealth: "+ stealth/birds.length);
   console.log("Litter: "+ litter/birds.length);
+  console.log("Eyesight: " + eyesight/tigers.length);
+  console.log("Saturation: " + sat/tigers.length);
+  console.log("Hunger: " + hunger/tigers.length);
+
 
 }
 window.onload = function () {
@@ -235,7 +257,7 @@ var bird_chart = new CanvasJS.Chart("birdContainer", {
 
 var xValBird = 0;
 var updateInterval = 250;
-var dataLength = 100; 
+var dataLength = 1000; 
 
 var updateBirdChart = function (count) {
 
