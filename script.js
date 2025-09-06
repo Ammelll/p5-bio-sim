@@ -156,7 +156,6 @@ function setup() {
 }
 
 function draw() {
-  console.log(birds)
   background(200);
   for(const bird of birds){
     bird.collisions(birds,[])
@@ -198,6 +197,13 @@ function speedUp(){
 }
 function slowDown(){
   speed_multiplier/=1.5;
+}
+function displayGenes(){
+  let count = 0;
+  for(const bird of birds){
+    count+=bird.genome.speedGene.value;
+  }
+  console.log(count/birds.length)
 }
 window.onload = function () {
 
