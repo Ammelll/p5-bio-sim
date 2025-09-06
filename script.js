@@ -7,24 +7,28 @@ class Velocity{
   }
 }
 class Genome{
-  constructor(speedGene,sizeGene,stealthGene){
+  constructor(speedGene,sizeGene,stealthGene, litterGene){
     this.speedGene = speedGene;
     this.sizeGene = sizeGene;
     this.stealthGene = stealthGene;
+    this.litterGene = litterGene;
   }
 }
 function combineGenome(p1,p2){
   return new Genome(
     new Gene(Math.sqrt(p1.genome.speedGene.value*p2.genome.speedGene.value)),
     new Gene(Math.sqrt(p1.genome.sizeGene.value*p2.genome.sizeGene.value)),
-    new Gene(Math.sqrt(p1.genome.stealthGene.value*p2.genome.stealthGene.value))
+    new Gene(Math.sqrt(p1.genome.stealthGene.value*p2.genome.stealthGene.value)),
+    new Gene(Math.sqrt(p1.genome.litterGene.value*p2.genome.litterGene.value)),
+
   );
 }
 function randomGenome(){
   return new Genome(
     new Gene(Math.max(0.5,Math.random()*2)),
+    new Gene(Math.max(0.25,Math.random()*2)),
     new Gene(Math.max(0.5,Math.random()*2)),
-    new Gene(Math.max(0.5,Math.random()*2)),
+    new Gene(Math.max(1,Math.random()*10)),
   );
 }
 
@@ -52,6 +56,9 @@ class Organism{
   }
   collisions(species,prey){
     for(const p of prey){
+      if(p.genome.stealthGene.value > Math.max(0.5,Math.random()*2)){
+        continue;
+      }
       if(Math.sqrt(Math.pow(this.x-p.x,2) + Math.pow(this.y-p.y,2)) < this.d/2 + p.d/2){
         this.consume(p);
       }
@@ -104,9 +111,7 @@ class Tiger extends Organism{
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
-    if(tigers.length < 4){
     tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
-    }
   }
   draw(){
     fill(20, 0, 250);
@@ -142,7 +147,7 @@ class Bird extends Organism{
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
-    for(let i = 0; i < 5; i++){
+    for(let i = 0; i < genome.litterGene.value; i++){
         birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random()),genome))
     }    
   }
@@ -199,11 +204,21 @@ function slowDown(){
   speed_multiplier/=1.5;
 }
 function displayGenes(){
-  let count = 0;
+  let speed = 0;
+  let size = 0;
+  let stealth = 0;
+  let litter = 0;
   for(const bird of birds){
-    count+=bird.genome.speedGene.value;
+    speed+=bird.genome.speedGene.value;
+    size+=bird.genome.sizeGene.value;
+    stealth+=bird.genome.stealthGene.value;
+    litter+=bird.genome.litterGene.value;
   }
-  console.log(count/birds.length)
+  console.log("Speed: "+ speed/birds.length);
+  console.log("Size: "+ size/birds.length);
+  console.log("Stealth: "+ stealth/birds.length);
+  console.log("Litter: "+ litter/birds.length);
+
 }
 window.onload = function () {
 
