@@ -18,7 +18,7 @@ class Genome{
   }
 }
 function combineGenome(p1,p2){
-  return new Genome(
+  let genome = new Genome(
     new Gene(Math.sqrt(p1.genome.speedGene.value*p2.genome.speedGene.value)),
     new Gene(Math.sqrt(p1.genome.sizeGene.value*p2.genome.sizeGene.value)),
     new Gene(Math.sqrt(p1.genome.stealthGene.value*p2.genome.stealthGene.value)),
@@ -26,18 +26,29 @@ function combineGenome(p1,p2){
     new Gene(Math.sqrt(p1.genome.eyeSightGene.value*p2.genome.eyeSightGene.value)),
     new Gene(Math.sqrt(p1.genome.saturationGene.value*p2.genome.saturationGene.value)),
     new Gene(Math.sqrt(p1.genome.hungerGene.value*p2.genome.hungerGene.value)),
-
   );
+  if(Math.random() > 0.95){
+    return mutateGenome(genome);
+  }
+  return genome;
+}
+function mutateGenome(genome){
+  for(const gene in genome){
+    if(Math.random() > 0.8){
+      gene.value = gene.value+Math.random()-0.5
+    } 
+  }
+  return genome;
 }
 function randomGenome(){
   return new Genome(
     new Gene(Math.max(0.5,Math.random()*2)),
     new Gene(Math.max(0.25,Math.random()*2)),
     new Gene(Math.max(0.5,Math.random()*2)),
-    new Gene(Math.max(1,Math.random()*10)),
-    new Gene(Math.max(1,Math.random()*3)),
+    new Gene(Math.max(1,Math.random()*20)),
+    new Gene(Math.max(1,Math.random()*2.5)),
     new Gene(Math.max(5,Math.random()*20)),
-    new Gene(Math.max(5,Math.random()*20)),
+    new Gene(Math.max(20,Math.random()*40)),
   );
 }
 
@@ -79,7 +90,7 @@ class Organism{
       if(this.mating_cooldown || individual.mating_cooldown){
         return
       }
-      if(this.saturation < 60 || individual.saturation < 60){
+      if(this.saturation < 70 || individual.saturation < 70){
         return;
       }
       if(Math.abs(this.x - individual.x) < this.d && Math.abs(this.y - individual.y) < this.d){
