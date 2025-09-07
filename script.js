@@ -14,7 +14,8 @@ class Genome{
     this.litterGene = litterGene;
     this.eyeSightGene = eyeSightGene;
     this.saturationGene = saturationGene;
-    this.hungerGene = hungerGene
+    this.hungerGene = hungerGene;
+    this.genes = [speedGene,sizeGene,stealthGene,litterGene,eyeSightGene,saturationGene,hungerGene];
   }
 }
 function combineGenome(p1,p2){
@@ -27,15 +28,15 @@ function combineGenome(p1,p2){
     new Gene(Math.sqrt(p1.genome.saturationGene.value*p2.genome.saturationGene.value)),
     new Gene(Math.sqrt(p1.genome.hungerGene.value*p2.genome.hungerGene.value)),
   );
-  if(Math.random() > 0.95){
+  if(Math.random() > 0.8){
     return mutateGenome(genome);
   }
   return genome;
 }
 function mutateGenome(genome){
-  for(const gene in genome){
-    if(Math.random() > 0.8){
-      gene.value = gene.value+Math.random()-0.5
+  for(let gene of genome.genes){
+    if(Math.random() > 0.5){
+      gene.value = gene.value+Math.random()/2
     } 
   }
   return genome;
@@ -47,7 +48,7 @@ function randomGenome(){
     new Gene(Math.max(0.5,Math.random()*2)),
     new Gene(Math.max(1,Math.random()*20)),
     new Gene(Math.max(1,Math.random()*2.5)),
-    new Gene(Math.max(5,Math.random()*20)),
+    new Gene(Math.max(5,Math.random()*30)),
     new Gene(Math.max(20,Math.random()*40)),
   );
 }
@@ -175,7 +176,9 @@ class Bird extends Organism{
 }
 const birds = spawnBirds();
 const tigers = spawnTiger();
-
+const initial_genes = initialGenes();
+const initial_birds_size = birds.length;
+const inital_tigers_size = tigers.length;
 function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   background(200);
@@ -217,6 +220,27 @@ function spawnTiger(){
   }
   return tigers;
 }
+function initialGenes(){
+  let speed = 0;
+  let size = 0;
+  let stealth = 0;
+  let litter = 0;
+  let eyesight = 0
+  let sat = 0;
+  let hunger = 0;
+  for(const bird of birds){
+    speed+=bird.genome.speedGene.value;
+    size+=bird.genome.sizeGene.value;
+    stealth+=bird.genome.stealthGene.value;
+    litter+=bird.genome.litterGene.value;
+  }
+  for(const tiger of tigers){
+    eyesight+=tiger.genome.eyeSightGene.value;
+    sat+=tiger.genome.saturationGene.value;
+    hunger+=tiger.genome.hungerGene.value;
+  }
+  return [speed,size,stealth,litter,eyesight,sat,hunger];
+}
 
 function speedUp(){
   speed_multiplier*=1.5;
@@ -243,13 +267,13 @@ function displayGenes(){
     sat+=tiger.genome.saturationGene.value;
     hunger+=tiger.genome.hungerGene.value;
   }
-  console.log("Speed: "+ speed/birds.length);
-  console.log("Size: "+ size/birds.length);
-  console.log("Stealth: "+ stealth/birds.length);
-  console.log("Litter: "+ litter/birds.length);
-  console.log("Eyesight: " + eyesight/tigers.length);
-  console.log("Saturation: " + sat/tigers.length);
-  console.log("Hunger: " + hunger/tigers.length);
+  console.log("Speed: "+ (speed/birds.length-initial_genes[0]/initial_birds_size).toString());
+  console.log("Size: "+ (size/birds.length-initial_genes[1]/initial_birds_size).toString());
+  console.log("Stealth: "+ (stealth/birds.length-initial_genes[2]/initial_birds_size).toString());
+  console.log("Litter: "+ (litter/birds.length-initial_genes[3]/initial_birds_size).toString());
+  console.log("Eyesight: " + (eyesight/tigers.length-initial_genes[4]/inital_tigers_size).toString());
+  console.log("Saturation: " + (sat/tigers.length-initial_genes[5]/inital_tigers_size).toString());
+  console.log("Hunger: " + (hunger/tigers.length-initial_genes[6]/inital_tigers_size).toString());
 
 
 }
