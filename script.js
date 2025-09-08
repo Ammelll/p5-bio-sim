@@ -74,6 +74,8 @@ class Organism{
     this.v = v;
     this.d = d;
     this.genome = genome;
+    this.alive = true;
+    setInterval(()=>this.saturation-=this.genome.hungerGene.value,1000);
   }
   collisions(species,prey){
     for(const p of prey){
@@ -109,10 +111,68 @@ class Organism{
     this.spawn(this,ind)
   }
   move(){
+    if(!this.alive){
+      return;
+    }
     this.x = this.x+this.v.x*speed_multiplier*this.genome.speedGene.value;
     this.y = this.y+this.v.y*speed_multiplier*this.genome.speedGene.value;
     this.v.x = oob(this.x,this.v.x,this.d)
     this.v.y = oob(this.y,this.v.y,this.d)
+  }
+}
+class Decomposer extends Organism{
+  constructor(initial_mating_cooldown,x,y,v,genome){
+    super(x,y,v,5,genome);
+    this.saturation = 70;
+  }
+  draw(){
+    fill(255,0,0);
+    circle(this.x,this.y,this.d);
+    noFill();
+    stroke(0,0,0);
+    textSize(20)
+    text(this.saturation.toPrecision(3).toString(),this.x,this.y,)
+    if(this.saturation < 0){
+      this.starve();
+    }
+    
+  }
+  starve(){
+    decomposers.splice(decomposers.indexOf(this),1)
+  }
+  collisions(){
+    for(const tiger of tigers){
+      if(tiger.alive){
+        continue;
+      }
+      if(Math.abs(this.x - tiger.x) < tiger.d && Math.abs(this.y - tiger.y) < tiger.d){
+        this.consume(tiger,null);
+      }
+    }
+    for(const bird of birds){
+      if(bird.alive){
+        continue;
+      }
+      if(Math.abs(this.x - bird.x) < bird.d && Math.abs(this.y - bird.y) < bird.d){
+        this.consume(null,bird);
+      }
+    }
+  }
+  consume(tiger,bird){
+    if(tiger != null){
+      tiger.d-=5;
+      this.saturation+=10;
+      if(tiger.d <= 10){
+        tigers.splice(tigers.indexOf(this),1)
+      }
+    }
+    if(bird != null){
+      bird.d-=5;
+      this.saturation+=10;
+      if(bird.d <= 10){
+        birds.splice(birds.indexOf(this),1)
+      }
+    }
   }
 }
 class Tiger extends Organism{
@@ -124,7 +184,6 @@ class Tiger extends Organism{
     setTimeout(()=> {
           this.mating_cooldown = false;
         },5000);
-    setInterval(()=>this.saturation-=this.genome.hungerGene.value,1000);
   }
   consume(prey){
     birds.splice(birds.indexOf(prey),1)
@@ -135,16 +194,17 @@ class Tiger extends Organism{
     tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
   }
   draw(){
+    // if(!this.alive) return;
     fill(20, 0, 250);
     circle(this.x,this.y,this.d);
     noFill();
     stroke(0,0,0);
-    textSize(20)
+    textSize(8)
     text(this.saturation.toPrecision(3).toString(),this.x,this.y,)
     if(this.saturation < 0) this.starve();
   }
   starve(){
-    tigers.splice(tigers.indexOf(this),1)
+    this.alive = false;
   }
 }
 
@@ -163,9 +223,12 @@ class Bird extends Organism{
     fill(20, 150, 30);
     circle(this.x,this.y,this.d);
     noFill();
-  }
-  collide(){
-
+    stroke(0,0,0);
+    textSize(8)
+    text(this.saturation.toPrecision(3).toString(),this.x,this.y,)
+    if(this.saturation < 0){
+      this.starve();
+    }
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
@@ -173,9 +236,13 @@ class Bird extends Organism{
         birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random()),genome))
     }    
   }
+  starve(){
+    this.alive = false;
+  }
 }
 const birds = spawnBirds();
 const tigers = spawnTiger();
+const decomposers = spawnDecomposers();
 const initial_genes = initialGenes();
 const initial_birds_size = birds.length;
 const inital_tigers_size = tigers.length;
@@ -196,6 +263,11 @@ function draw() {
     tiger.move();
     tiger.draw();
   }
+  for(const decomposer of decomposers){
+    decomposer.collisions();
+    decomposer.move();
+    decomposer.draw();
+  }
 }
 
 function spawnBirds(){
@@ -203,7 +275,9 @@ function spawnBirds(){
   for(let x = 10; x< CANVAS_WIDTH-10; x++){
     for(let y = 10; y < CANVAS_HEIGHT-10; y++){
       if(Math.random() < 0.0008){
-        birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
+        let rgenome = randomGenome();
+        rgenome.hungerGene.value = 5;
+        birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random()),rgenome))
       }
     }
   }
@@ -213,12 +287,27 @@ function spawnTiger(){
   let tigers = []
   for(let x = 50; x < CANVAS_WIDTH-50; x++){
     for(let y = 50; y < CANVAS_HEIGHT-50; y++){
-      if(Math.random() < 0.000008){
+      if(Math.random() < 0.000004){
+        // let rgenome = randomGenome();
+        // rgenome.hungerGene.value = 1;
         tigers.push(new Tiger(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
   }
   return tigers;
+}
+function spawnDecomposers(){
+  let decomposers = []
+  for(let x = 10; x< CANVAS_WIDTH-10; x++){
+    for(let y = 10; y < CANVAS_HEIGHT-10; y++){
+      if(Math.random() < 0.000016){
+        let rgenome = randomGenome();
+        rgenome.hungerGene.value = 1;
+        decomposers.push(new Decomposer(false,x,y,new Velocity(Math.random(),Math.random()),rgenome))
+      }
+    }
+  }
+  return decomposers;
 }
 function initialGenes(){
   let speed = 0;
