@@ -46,10 +46,10 @@ function randomGenome(){
     new Gene(Math.max(0.5,Math.random()*2)),
     new Gene(Math.max(0.25,Math.random()*2)),
     new Gene(Math.max(0.5,Math.random()*2)),
-    new Gene(Math.max(1,Math.random()*20)),
-    new Gene(Math.max(1,Math.random()*2.5)),
-    new Gene(Math.max(5,Math.random()*30)),
+    new Gene(Math.max(5,Math.random()*20)),
+    new Gene(Math.max(2,Math.random()*4)),
     new Gene(Math.max(20,Math.random()*40)),
+    new Gene(Math.max(10,Math.random()*20)),
   );
 }
 
@@ -91,7 +91,7 @@ class Organism{
       if(this.mating_cooldown || individual.mating_cooldown){
         return
       }
-      if(this.saturation < 70 || individual.saturation < 70){
+      if(this.saturation < 40 || individual.saturation < 40){
         return;
       }
       if(Math.abs(this.x - individual.x) < this.d && Math.abs(this.y - individual.y) < this.d){
@@ -115,15 +115,43 @@ class Organism{
     this.v.y = oob(this.y,this.v.y,this.d)
   }
 }
+class Apex extends Organism{
+  constructor(x,y,v,genome){
+    super(x,y,v,10*genome.sizeGene.value,genome);
+    setTimeout(()=> {
+      this.explode()
+    },20000);
+  }
+  draw(){
+    fill(255, 0, 250);
+    circle(this.x,this.y,this.d);
+    noFill();
+  }
+  explode(){
+    for(let i = 0; i < 5; i++){
+        tigers.push((new Tiger(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),randomGenome())))
+    }
+    apexs.splice(apexs.indexOf(this),1);
+
+  }
+  consume(prey){
+    if(prey instanceof Tiger){
+      tigers.splice(tigers.indexOf(prey),1);
+      this.d+=prey.d/this.d;
+    }
+  }
+ spawn(p1,p2){
+    let genome = combineGenome(p1,p2);
+    apexs.push(new Apex(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random()*2,Math.random()*2),genome))
+  }}
 class Tiger extends Organism{
-  constructor(initial_mating_cooldown,x,y,v,genome){
+  constructor(x,y,v,genome){
     super(x,y,v,50*genome.sizeGene.value,genome);
     this.saturation = 30;
-    this.mating_cooldown = initial_mating_cooldown;
-    this.mating_cooldown_length = 10000;
+    this.mating_cooldown = true;
     setTimeout(()=> {
           this.mating_cooldown = false;
-        },5000);
+        },1000);
     setInterval(()=>this.saturation-=this.genome.hungerGene.value,1000);
   }
   consume(prey){
@@ -132,7 +160,7 @@ class Tiger extends Organism{
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
-    tigers.push(new Tiger(true,randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
+    tigers.push(new Tiger(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
   }
   draw(){
     fill(20, 0, 250);
@@ -153,7 +181,6 @@ class Bird extends Organism{
     super(x,y,v,10*genome.sizeGene.value,genome)
     this.saturation = 100;
     this.mating_cooldown = initial_mating_cooldown;
-    this.mating_cooldown_length = 5000;
     setTimeout(()=> {
       this.mating_cooldown = false;
     },5000);
@@ -176,6 +203,7 @@ class Bird extends Organism{
 }
 const birds = spawnBirds();
 const tigers = spawnTiger();
+const apexs = spawnApexs();
 const initial_genes = initialGenes();
 const initial_birds_size = birds.length;
 const inital_tigers_size = tigers.length;
@@ -196,13 +224,19 @@ function draw() {
     tiger.move();
     tiger.draw();
   }
+  for(const apex of apexs){
+    apex.collisions(apexs,birds);
+    apex.collisions(apexs,tigers)
+    apex.move();
+    apex.draw();
+  }
 }
 
 function spawnBirds(){
   let birds = []
   for(let x = 10; x< CANVAS_WIDTH-10; x++){
     for(let y = 10; y < CANVAS_HEIGHT-10; y++){
-      if(Math.random() < 0.0008){
+      if(Math.random() < 0.008){
         birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
@@ -213,12 +247,18 @@ function spawnTiger(){
   let tigers = []
   for(let x = 50; x < CANVAS_WIDTH-50; x++){
     for(let y = 50; y < CANVAS_HEIGHT-50; y++){
-      if(Math.random() < 0.000008){
-        tigers.push(new Tiger(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
+      if(Math.random() < 0.000016){
+        tigers.push(new Tiger(x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
   }
   return tigers;
+}
+function spawnApexs(){
+  let apexs = [];
+  apexs.push(new Apex(50,50,new Velocity(Math.random()*2,Math.random()*2),randomGenome()));
+  apexs.push(new Apex(50,50,new Velocity(Math.random()*2,Math.random()*2),randomGenome()));
+  return apexs;
 }
 function initialGenes(){
   let speed = 0;
