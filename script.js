@@ -1,5 +1,6 @@
 let speed_multiplier = 5;
 const CANVAS_WIDTH = CANVAS_HEIGHT = 800;
+let disaster = false;
 class Velocity{
   constructor(x,y){
     this.x = x;
@@ -47,8 +48,8 @@ function randomGenome(){
     new Gene(Math.max(0.25,Math.random()*2)),
     new Gene(Math.max(0.5,Math.random()*2)),
     new Gene(Math.max(5,Math.random()*20)),
-    new Gene(Math.max(2,Math.random()*4)),
-    new Gene(Math.max(20,Math.random()*40)),
+    new Gene(Math.max(0.5,Math.random()*2)),
+    new Gene(Math.max(10,Math.random()*20)),
     new Gene(Math.max(10,Math.random()*20)),
   );
 }
@@ -115,35 +116,36 @@ class Organism{
     this.v.y = oob(this.y,this.v.y,this.d)
   }
 }
-class Apex extends Organism{
+class Pinkerton extends Organism{
   constructor(x,y,v,genome){
     super(x,y,v,10*genome.sizeGene.value,genome);
-    setTimeout(()=> {
-      this.explode()
-    },20000);
   }
   draw(){
     fill(255, 0, 250);
     circle(this.x,this.y,this.d);
     noFill();
   }
-  explode(){
-    for(let i = 0; i < 5; i++){
-        tigers.push((new Tiger(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),randomGenome())))
+    collisions(growth, prey){
+    for(const p of prey){
+      if(p.genome.stealthGene.value > this.genome.eyeSightGene.value){
+        continue;
+      }
+      if(Math.sqrt(Math.pow(this.x-p.x,2) + Math.pow(this.y-p.y,2)) < this.d/2 + p.d/2){
+        if(prey.stealth > 1.9){
+          this.consume(p);
+        }
+      }
     }
-    apexs.splice(apexs.indexOf(this),1);
-
+    for(const g of growth){
+      if(Math.sqrt(Math.pow(this.x-g.x,2) + Math.pow(this.y-g.y,2)) < this.d/2 + g.d/2){
+        g.d-=0.5
+      }
+    }
   }
   consume(prey){
-    if(prey instanceof Tiger){
-      tigers.splice(tigers.indexOf(prey),1);
-      this.d+=prey.d/this.d;
-    }
+    birds.splice(birds.indexOf(prey),1)
   }
- spawn(p1,p2){
-    let genome = combineGenome(p1,p2);
-    apexs.push(new Apex(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random()*2,Math.random()*2),genome))
-  }}
+}
 class Tiger extends Organism{
   constructor(x,y,v,genome){
     super(x,y,v,50*genome.sizeGene.value,genome);
@@ -201,9 +203,9 @@ class Bird extends Organism{
     }    
   }
 }
+const pinkertons = spawnPinkertons();
 const birds = spawnBirds();
 const tigers = spawnTiger();
-const apexs = spawnApexs();
 const initial_genes = initialGenes();
 const initial_birds_size = birds.length;
 const inital_tigers_size = tigers.length;
@@ -211,9 +213,11 @@ function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   background(200);
 }
-
 function draw() {
   background(200);
+  if(disaster){
+    drawDisaster();
+  }
   for(const bird of birds){
     bird.collisions(birds,[])
     bird.move();
@@ -224,11 +228,10 @@ function draw() {
     tiger.move();
     tiger.draw();
   }
-  for(const apex of apexs){
-    apex.collisions(apexs,birds);
-    apex.collisions(apexs,tigers)
-    apex.move();
-    apex.draw();
+  for(const pinkerton of pinkertons){
+    pinkerton.move();
+    pinkerton.draw();
+    pinkerton.collisions(tigers,birds)
   }
 }
 
@@ -236,30 +239,30 @@ function spawnBirds(){
   let birds = []
   for(let x = 10; x< CANVAS_WIDTH-10; x++){
     for(let y = 10; y < CANVAS_HEIGHT-10; y++){
-      if(Math.random() < 0.008){
+      if(Math.random() < 0.002){
         birds.push(new Bird(false,x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
   }
   return birds;
 }
+function spawnPinkertons(){
+  let pinkertons = [];
+  pinkertons.push(new Pinkerton(50,50, new Velocity(Math.random(),Math.random()), randomGenome()));
+  return pinkertons;
+}
 function spawnTiger(){
   let tigers = []
   for(let x = 50; x < CANVAS_WIDTH-50; x++){
     for(let y = 50; y < CANVAS_HEIGHT-50; y++){
-      if(Math.random() < 0.000016){
+      if(Math.random() < 0.00001){
         tigers.push(new Tiger(x,y,new Velocity(Math.random(),Math.random()),randomGenome()))
       }
     }
   }
   return tigers;
 }
-function spawnApexs(){
-  let apexs = [];
-  apexs.push(new Apex(50,50,new Velocity(Math.random()*2,Math.random()*2),randomGenome()));
-  apexs.push(new Apex(50,50,new Velocity(Math.random()*2,Math.random()*2),randomGenome()));
-  return apexs;
-}
+
 function initialGenes(){
   let speed = 0;
   let size = 0;
@@ -287,6 +290,9 @@ function speedUp(){
 }
 function slowDown(){
   speed_multiplier/=1.5;
+}
+function enableDisaster(){
+  disaster = !disaster;
 }
 function displayGenes(){
   let speed = 0;
