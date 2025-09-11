@@ -1,5 +1,6 @@
 let speed_multiplier = 5;
-const CANVAS_WIDTH = CANVAS_HEIGHT = 800;
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 800;
 let disaster = false;
 class Velocity{
   constructor(x,y){
@@ -62,147 +63,24 @@ class Gene{
 function randomCoordinate(boundary){
   return Math.max(boundary,Math.random()*CANVAS_HEIGHT-boundary)
 }
+function divider(position, velocity, diameter){
+  if(!disaster) return velocity;
+  if(position+diameter/2 > CANVAS_WIDTH/2-50 && position-diameter/2 < CANVAS_WIDTH/2 + 50){
+    return -velocity;
+  }
+  if(position+diameter/2 < CANVAS_WIDTH/2-50 && position-diameter/2 > CANVAS_WIDTH/2 + 50){
+    console.log("hey")
+  }
+  return velocity;
+}
 function oob(position, velocity,diameter){
   if(position+diameter/2 > CANVAS_WIDTH|| position-diameter/2 < 0){
     return -velocity;
   }
   return velocity;
 }
-class Organism{
-  constructor(x,y,v,d,genome){
-    this.x = x;
-    this.y = y;
-    this.v = v;
-    this.d = d;
-    this.genome = genome;
-  }
-  collisions(species,prey){
-    for(const p of prey){
-      if(p.genome.stealthGene.value > this.genome.eyeSightGene.value){
-        continue;
-      }
-      if(Math.sqrt(Math.pow(this.x-p.x,2) + Math.pow(this.y-p.y,2)) < this.d/2 + p.d/2){
-        this.consume(p);
-      }
-    }
-    for(const individual of species){
-      if(individual == this){
-        return
-      }
-      if(this.mating_cooldown || individual.mating_cooldown){
-        return
-      }
-      if(this.saturation < 40 || individual.saturation < 40){
-        return;
-      }
-      if(Math.abs(this.x - individual.x) < this.d && Math.abs(this.y - individual.y) < this.d){
-        this.mate(individual,1000);
-      }
-    }
-  }
-  mate(ind,cooldown){
-    this.mating_cooldown = true;
-    ind.mating_cooldown = true
-    setTimeout(()=> {
-      this.mating_cooldown = false;
-      ind.mating_cooldown = false;
-    },cooldown);
-    this.spawn(this,ind)
-  }
-  move(){
-    this.x = this.x+this.v.x*speed_multiplier*this.genome.speedGene.value;
-    this.y = this.y+this.v.y*speed_multiplier*this.genome.speedGene.value;
-    this.v.x = oob(this.x,this.v.x,this.d)
-    this.v.y = oob(this.y,this.v.y,this.d)
-  }
-}
-class Pinkerton extends Organism{
-  constructor(x,y,v,genome){
-    super(x,y,v,10*genome.sizeGene.value,genome);
-  }
-  draw(){
-    fill(255, 0, 250);
-    circle(this.x,this.y,this.d);
-    noFill();
-  }
-    collisions(growth, prey){
-    for(const p of prey){
-      if(p.genome.stealthGene.value > this.genome.eyeSightGene.value){
-        continue;
-      }
-      if(Math.sqrt(Math.pow(this.x-p.x,2) + Math.pow(this.y-p.y,2)) < this.d/2 + p.d/2){
-        if(prey.stealth > 1.9){
-          this.consume(p);
-        }
-      }
-    }
-    for(const g of growth){
-      if(Math.sqrt(Math.pow(this.x-g.x,2) + Math.pow(this.y-g.y,2)) < this.d/2 + g.d/2){
-        g.d-=0.5
-      }
-    }
-  }
-  consume(prey){
-    birds.splice(birds.indexOf(prey),1)
-  }
-}
-class Tiger extends Organism{
-  constructor(x,y,v,genome){
-    super(x,y,v,50*genome.sizeGene.value,genome);
-    this.saturation = 30;
-    this.mating_cooldown = true;
-    setTimeout(()=> {
-          this.mating_cooldown = false;
-        },1000);
-    setInterval(()=>this.saturation-=this.genome.hungerGene.value,1000);
-  }
-  consume(prey){
-    birds.splice(birds.indexOf(prey),1)
-    this.saturation = Math.min(this.saturation+this.genome.saturationGene.value,100);
-  }
-  spawn(p1,p2){
-    let genome = combineGenome(p1,p2);
-    tigers.push(new Tiger(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
-  }
-  draw(){
-    fill(20, 0, 250);
-    circle(this.x,this.y,this.d);
-    noFill();
-    stroke(0,0,0);
-    textSize(20)
-    text(this.saturation.toPrecision(3).toString(),this.x,this.y,)
-    if(this.saturation < 0) this.starve();
-  }
-  starve(){
-    tigers.splice(tigers.indexOf(this),1)
-  }
-}
 
-class Bird extends Organism{
-  constructor(initial_mating_cooldown,x,y,v,genome){
-    super(x,y,v,10*genome.sizeGene.value,genome)
-    this.saturation = 100;
-    this.mating_cooldown = initial_mating_cooldown;
-    setTimeout(()=> {
-      this.mating_cooldown = false;
-    },5000);
-  }
 
-  draw(){
-    fill(20, 150, 30);
-    circle(this.x,this.y,this.d);
-    noFill();
-  }
-  collide(){
-
-  }
-  spawn(p1,p2){
-    let genome = combineGenome(p1,p2);
-    for(let i = 0; i < genome.litterGene.value; i++){
-        birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random()),genome))
-    }    
-  }
-}
 const pinkertons = spawnPinkertons();
 const birds = spawnBirds();
 const tigers = spawnTiger();
@@ -212,6 +90,10 @@ const inital_tigers_size = tigers.length;
 function setup() {
   createCanvas(CANVAS_WIDTH, CANVAS_HEIGHT);
   background(200);
+}
+function drawDisaster(){
+  fill(0,0,0);
+  rect(CANVAS_WIDTH/2-50,0,100,CANVAS_HEIGHT)
 }
 function draw() {
   background(200);
