@@ -8,18 +8,6 @@ class Velocity{
     this.y = y;
   }
 }
-class Genome{
-  constructor(speedGene,sizeGene,stealthGene, litterGene, eyeSightGene,saturationGene, hungerGene){
-    this.speedGene = speedGene;
-    this.sizeGene = sizeGene;
-    this.stealthGene = stealthGene;
-    this.litterGene = litterGene;
-    this.eyeSightGene = eyeSightGene;
-    this.saturationGene = saturationGene;
-    this.hungerGene = hungerGene;
-    this.genes = [speedGene,sizeGene,stealthGene,litterGene,eyeSightGene,saturationGene,hungerGene];
-  }
-}
 function combineGenome(p1,p2){
   let genome = new Genome(
     new Gene(Math.sqrt(p1.genome.speedGene.value*p2.genome.speedGene.value)),
@@ -29,6 +17,7 @@ function combineGenome(p1,p2){
     new Gene(Math.sqrt(p1.genome.eyeSightGene.value*p2.genome.eyeSightGene.value)),
     new Gene(Math.sqrt(p1.genome.saturationGene.value*p2.genome.saturationGene.value)),
     new Gene(Math.sqrt(p1.genome.hungerGene.value*p2.genome.hungerGene.value)),
+    new Gene(Math.sqrt(p1.genome.colorGene.value*p2.genome.colorGene.value)),
   );
   if(Math.random() > 0.8){
     return mutateGenome(genome);
@@ -45,21 +34,18 @@ function mutateGenome(genome){
 }
 function randomGenome(){
   return new Genome(
-    new Gene(Math.max(0.5,Math.random()*2)),
-    new Gene(Math.max(0.25,Math.random()*2)),
-    new Gene(Math.max(0.5,Math.random()*2)),
-    new Gene(Math.max(5,Math.random()*20)),
-    new Gene(Math.max(0.5,Math.random()*2)),
-    new Gene(Math.max(10,Math.random()*20)),
-    new Gene(Math.max(10,Math.random()*20)),
+    new Gene(Math.max(0.5,Math.random()*2)), //speed
+    new Gene(Math.max(0.25,Math.random()*2)), //size
+    new Gene(Math.max(0.5,Math.random()*1.5)), //stealth
+    new Gene(Math.max(8,Math.random()*35)), //litter
+    new Gene(Math.max(0.5,Math.random()*2)), //eyesight
+    new Gene(Math.max(10,Math.random()*20)), //saturationm
+    new Gene(Math.max(10,Math.random()*20)), //hunger
+    new Gene(Math.random()*255), //color
   );
 }
 
-class Gene{
-  constructor(value){
-    this.value = value;
-  }
-}
+
 function randomCoordinate(boundary){
   return Math.max(boundary,Math.random()*CANVAS_HEIGHT-boundary)
 }
@@ -68,10 +54,17 @@ function divider(position, velocity, diameter){
   if(position+diameter/2 > CANVAS_WIDTH/2-50 && position-diameter/2 < CANVAS_WIDTH/2 + 50){
     return -velocity;
   }
-  if(position+diameter/2 < CANVAS_WIDTH/2-50 && position-diameter/2 > CANVAS_WIDTH/2 + 50){
-    console.log("hey")
-  }
   return velocity;
+}
+function bump(position,diameter){
+  if(!disaster) return position;
+  if(position+diameter/2 > CANVAS_WIDTH/2-45 && position-diameter/2 < CANVAS_WIDTH/2 + 45){
+    if(Math.abs(position+diameter/2 -CANVAS_WIDTH/2-45) > Math.abs(position-diameter/2 -CANVAS_WIDTH/2 + 45)){
+      return position-50-diameter;
+    }
+    return position+50+diameter;
+  }
+  return position;
 }
 function oob(position, velocity,diameter){
   if(position+diameter/2 > CANVAS_WIDTH|| position-diameter/2 < 0){
@@ -175,6 +168,9 @@ function slowDown(){
 }
 function enableDisaster(){
   disaster = !disaster;
+}
+function summonTiger(){
+  tigers.push(new Tiger(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),randomGenome()))
 }
 function displayGenes(){
   let speed = 0;

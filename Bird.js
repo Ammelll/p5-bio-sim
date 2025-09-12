@@ -9,7 +9,7 @@ class Bird extends Organism{
   }
 
   draw(){
-    fill(20, 150, 30);
+    fill(this.genome.colorGene.value, 255, this.genome.colorGene.value);
     circle(this.x,this.y,this.d);
     noFill();
   }
@@ -19,7 +19,7 @@ class Bird extends Organism{
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
     for(let i = 0; i < genome.litterGene.value; i++){
-        birds.push(new Bird(true,randomCoordinate(10),randomCoordinate(10),new Velocity(Math.random(),Math.random()),genome))
+        birds.push(new Bird(true,p1.x,p1.y,new Velocity(Math.random(),Math.random()),genome))
     }    
   }
 }

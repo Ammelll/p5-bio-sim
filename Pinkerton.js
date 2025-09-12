@@ -3,7 +3,7 @@ class Pinkerton extends Organism{
     super(x,y,v,10*genome.sizeGene.value,genome);
   }
   draw(){
-    fill(255, 0, 250);
+    fill(255, this.genome.colorGene.value, 250);
     circle(this.x,this.y,this.d);
     noFill();
   }

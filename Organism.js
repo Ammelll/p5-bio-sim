@@ -42,6 +42,7 @@ class Organism{
   move(){
     this.x = this.x+this.v.x*speed_multiplier*this.genome.speedGene.value;
     this.y = this.y+this.v.y*speed_multiplier*this.genome.speedGene.value;
+    this.x = bump(this.x,this.d);
     this.v.x = oob(this.x,this.v.x,this.d);
     this.v.y = oob(this.y,this.v.y,this.d);
     this.v.x = divider(this.x,this.v.x,this.d);

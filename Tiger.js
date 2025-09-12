@@ -14,10 +14,10 @@ class Tiger extends Organism{
   }
   spawn(p1,p2){
     let genome = combineGenome(p1,p2);
-    tigers.push(new Tiger(randomCoordinate(50),randomCoordinate(50),new Velocity(Math.random(),Math.random()),genome))
+    tigers.push(new Tiger(p1.x,p1.y,new Velocity(Math.random(),Math.random()),genome))
   }
   draw(){
-    fill(20, 0, 250);
+    fill(this.genome.colorGene.value, this.genome.colorGene.value, 250);
     circle(this.x,this.y,this.d);
     noFill();
     stroke(0,0,0);
