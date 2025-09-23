@@ -90,6 +90,9 @@ function drawDisaster(){
 }
 function draw() {
   background(200);
+  if(Math.random() > 0.9995){
+    disaster = !disaster;
+  }
   if(disaster){
     drawDisaster();
   }
